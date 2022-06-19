@@ -7,22 +7,19 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { setLoading } from "../../store/loading/loadingActions";
 import { connect } from "react-redux";
-import { employeeService } from "../../services";
+import { employeeService, holidayService } from "../../services";
 
 function Dashboard(props) {
   const { isLoading } = props;
-  const [date, setDate] = useState(new Date());
 
   useEffect(() => {
-    employeeService
-      .getAllEmployeeService()
+    holidayService
+      .getAllHolidayService()
       .then((data) => {
-        console.log("emp>>", data);
+        console.log("holiday>>", data);
       })
       .catch((err) => console.log("err>>", err));
-    return () => {
-      setDate(new Date());
-    };
+    return () => {};
   }, []);
 
   const handleDateClick = (arg) => {
@@ -38,15 +35,25 @@ function Dashboard(props) {
     );
   };
 
+  const renderDayContent = (content) => {
+    console.log('arg',content)
+    return (
+      <div style={{ backgroundColor: "white" }}>
+        <b>{content.dayNumberText}</b>
+      </div>
+    );
+  };
+
   return (
     <div>
       <FullCalendar
+        dayCellContent={renderDayContent}
         locale={"en"}
         firstDay={1}
         plugins={[dayGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
         events={[
-          { title: "All Day Event", start: "2022-06-01" },
+          { title: "All Day Event", start: "2022-06-01", end: "2022-06-01" },
           { title: "Long Event", start: "2022-06-07", end: "2022-06-10" },
           {
             groupId: "999",

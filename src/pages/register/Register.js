@@ -13,6 +13,8 @@ import { employeeService } from "../../services";
 import moment from "moment";
 import { Calendar } from "primereact/calendar";
 import { addLocale, locale } from "primereact/api";
+import { CommonFunction } from "../../util/CommonFunction";
+import { EmployeeModel } from "./components";
 
 function Register() {
   let emptyEmployee = {
@@ -68,10 +70,6 @@ function Register() {
   });
   locale();
 
-  const formatCurrency = (value) => {
-    return value.toLocaleString("en-US");
-  };
-
   const openNew = () => {
     setemployee(emptyEmployee);
     setSubmitted(false);
@@ -91,14 +89,22 @@ function Register() {
         employeeService
           .updateEmployeeService(employee)
           .then((data) => {
-            console.log("update>", data);
-            getAllEmployee();
-            toast.current.show({
-              severity: "success",
-              summary: "Successful",
-              detail: "Employee Updated",
-              life: 3000,
-            });
+            if (data.error) {
+              toast.current.show({
+                severity: "warn",
+                summary: "Error",
+                detail: data.message,
+                life: 3000,
+              });
+            } else {
+              getAllEmployee();
+              toast.current.show({
+                severity: "success",
+                summary: "Successful",
+                detail: "Employee Updated",
+                life: 3000,
+              });
+            }
           })
           .catch((err) => {
             toast.current.show({
@@ -112,14 +118,22 @@ function Register() {
         employeeService
           .addNewEmployeeService(employee)
           .then((data) => {
-            console.log("addemp>", data);
-            getAllEmployee();
-            toast.current.show({
-              severity: "success",
-              summary: "Successful",
-              detail: "Employee Created",
-              life: 3000,
-            });
+            if (data.error) {
+              toast.current.show({
+                severity: "warn",
+                summary: "Error",
+                detail: data.message,
+                life: 3000,
+              });
+            }else{
+              getAllEmployee();
+              toast.current.show({
+                severity: "success",
+                summary: "Successful",
+                detail: "Employee Created",
+                life: 3000,
+              });
+            }
           })
           .catch((err) => {
             toast.current.show({
@@ -141,11 +155,6 @@ function Register() {
     setEmployeeDialog(true);
   };
 
-  const dateFormat = (_date) => {
-    let date = new Date(_date);
-    return date;
-  };
-
   const cols = [
     { field: "employeeCode", header: "Code" },
     { field: "employeeName", header: "Name" },
@@ -161,50 +170,6 @@ function Register() {
     title: col.header,
     dataKey: col.field,
   }));
-
-  const exportCSV = () => {
-    dt.current.exportCSV();
-  };
-
-  const exportPdf = () => {
-    import("jspdf").then((jsPDF) => {
-      import("jspdf-autotable").then(() => {
-        const doc = new jsPDF.default(0, 0);
-        doc.autoTable(exportColumns, employees);
-        doc.save("employee.pdf");
-      });
-    });
-  };
-
-  const exportExcel = () => {
-    import("xlsx").then((xlsx) => {
-      const worksheet = xlsx.utils.json_to_sheet(employees);
-      const workbook = { Sheets: { data: worksheet }, SheetNames: ["data"] };
-      const excelBuffer = xlsx.write(workbook, {
-        bookType: "xlsx",
-        type: "array",
-      });
-      saveAsExcelFile(excelBuffer, "employee");
-    });
-  };
-
-  const saveAsExcelFile = (buffer, fileName) => {
-    import("file-saver").then((module) => {
-      if (module && module.default) {
-        let EXCEL_TYPE =
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8";
-        let EXCEL_EXTENSION = ".xlsx";
-        const data = new Blob([buffer], {
-          type: EXCEL_TYPE,
-        });
-
-        module.default.saveAs(
-          data,
-          fileName + "_export_" + new Date().getTime() + EXCEL_EXTENSION
-        );
-      }
-    });
-  };
 
   const onInputChange = (e, name) => {
     const val = (e.target && e.target.value) || "";
@@ -234,7 +199,7 @@ function Register() {
         <Button
           label="New"
           icon="pi pi-plus"
-          className="p-button-success mr-2"
+          className="p-button-success"
           onClick={openNew}
         />
       </React.Fragment>
@@ -248,7 +213,7 @@ function Register() {
           label="CSV"
           type="button"
           icon="pi pi-file"
-          onClick={exportCSV}
+          onClick={() => CommonFunction.exportCSV(dt)}
           className="mr-2"
           data-pr-tooltip="CSV"
         />
@@ -256,7 +221,7 @@ function Register() {
           label="Excel"
           type="button"
           icon="pi pi-file-excel"
-          onClick={exportExcel}
+          onClick={() => CommonFunction.exportExcel("Employee", employees)}
           className="p-button-success mr-2"
           data-pr-tooltip="XLS"
         />
@@ -264,7 +229,9 @@ function Register() {
           label="PDF"
           type="button"
           icon="pi pi-file-pdf"
-          onClick={exportPdf}
+          onClick={() =>
+            CommonFunction.exportPdf("employeeExport", exportColumns, employees)
+          }
           className="p-button-warning mr-2"
           data-pr-tooltip="PDF"
         />
@@ -273,7 +240,7 @@ function Register() {
   };
 
   const priceBodyTemplate = (rowData) => {
-    return formatCurrency(rowData.basicSalary);
+    return CommonFunction.formatCurrency(rowData.basicSalary);
   };
 
   const dateBodyTemplate = (rowData) => {
@@ -304,22 +271,6 @@ function Register() {
         />
       </span>
     </div>
-  );
-  const employeeDialogFooter = (
-    <React.Fragment>
-      <Button
-        label="Cancel"
-        icon="pi pi-times"
-        className="p-button-text"
-        onClick={hideDialog}
-      />
-      <Button
-        label="Save"
-        icon="pi pi-check"
-        className="p-button-text"
-        onClick={saveEmployee}
-      />
-    </React.Fragment>
   );
 
   return (
@@ -406,136 +357,18 @@ function Register() {
         </DataTable>
       </div>
 
-      <Dialog
-        visible={employeeDialog}
-        style={{ width: "450px" }}
-        header={
-          employee.id === null ? "Add New Employee" : "Edit Employee Details"
-        }
-        modal
-        className="p-fluid"
-        footer={employeeDialogFooter}
-        onHide={hideDialog}
-      >
-        <div className="field">
-          <label htmlFor="employeeCode">Employee Code</label>
-          <InputText
-            id="employeeCode"
-            value={employee.employeeCode}
-            onChange={(e) => onInputChange(e, "employeeCode")}
-            required
-            className={classNames({
-              "p-invalid": submitted && !employee.employeeCode,
-            })}
-          />
-          {submitted && !employee.employeeCode && (
-            <small className="p-error">Employee Code is required.</small>
-          )}
-        </div>
-        <div className="field">
-          <label htmlFor="employeeName">Name</label>
-          <InputText
-            id="employeeName"
-            value={employee.employeeName}
-            onChange={(e) => onInputChange(e, "employeeName")}
-            required
-            className={classNames({
-              "p-invalid": submitted && !employee.employeeName,
-            })}
-          />
-          {submitted && !employee.employeeName && (
-            <small className="p-error">Name is required.</small>
-          )}
-        </div>
-        <div className="field">
-          <label htmlFor="mobile">Mobile Number</label>
-          <InputText
-            id="mobile"
-            value={employee.mobile}
-            onChange={(e) => onInputChange(e, "mobile")}
-            required
-            className={classNames({
-              "p-invalid": submitted && !employee.mobile,
-            })}
-          />
-          {submitted && !employee.mobile && (
-            <small className="p-error">Mobile is required.</small>
-          )}
-        </div>
-        <div className="formgrid grid">
-          <div className="field col">
-            <label htmlFor="department">Department</label>
-            <InputText
-              id="department"
-              value={employee.department}
-              onChange={(e) => onInputChange(e, "department")}
-              required
-              className={classNames({
-                "p-invalid": submitted && !employee.department,
-              })}
-            />
-            {submitted && !employee.department && (
-              <small className="p-error">Department is required.</small>
-            )}
-          </div>
-          <div className="field col">
-            <label htmlFor="designation">Designation</label>
-            <InputText
-              id="designation"
-              value={employee.designation}
-              onChange={(e) => onInputChange(e, "designation")}
-              required
-              className={classNames({
-                "p-invalid": submitted && !employee.designation,
-              })}
-            />
-            {submitted && !employee.designation && (
-              <small className="p-error">Designation is required.</small>
-            )}
-          </div>
-        </div>
+      <EmployeeModel
+        employeeDialog={employeeDialog}
+        employee={employee}
+        hideDialog={hideDialog}
+        saveEmployee={saveEmployee}
+        onInputChange={onInputChange}
+        submitted={submitted}
+        onInputNumberChange={onInputNumberChange}
+        onDateChange={onDateChange}
+      />
 
-        <div className="formgrid grid">
-          <div className="field col">
-            <label htmlFor="basicSalary">Basic Salary</label>
-            <InputNumber
-              id="basicSalary"
-              value={employee.basicSalary}
-              onValueChange={(e) => onInputNumberChange(e, "basicSalary")}
-              mode="currency"
-              currency="MMK"
-            />
-          </div>
-          <div className="field col">
-            <label htmlFor="joinDate">Join Date</label>
-            <Calendar
-              id="joinDate"
-              value={dateFormat(employee.joinDate)}
-              onChange={(e) => onDateChange(e, "joinDate")}
-              disabledDays={[0, 6]}
-              dateFormat="dd-mm-yy"
-              showIcon
-            />
-          </div>
-        </div>
-        <div className="field">
-          <label htmlFor="address">Address</label>
-          <InputTextarea
-            id="address"
-            value={employee.address}
-            onChange={(e) => onInputChange(e, "address")}
-            required
-            rows={3}
-            cols={20}
-            className={classNames({
-              "p-invalid": submitted && !employee.address,
-            })}
-          />
-          {submitted && !employee.address && (
-            <small className="p-error">Address is required.</small>
-          )}
-        </div>
-      </Dialog>
+      
     </div>
   );
 }

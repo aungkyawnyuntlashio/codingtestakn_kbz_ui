@@ -1,3 +1,4 @@
-import { employeeService } from "./employee.Service";
+import { employeeService } from "./employee.service";
+import { holidayService } from "./holiday.service";
 
-export { employeeService };
+export { employeeService, holidayService };
