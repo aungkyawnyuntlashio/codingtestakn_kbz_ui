@@ -9,11 +9,12 @@ import "./App.css";
 
 import { Sidebar } from "primereact/sidebar";
 import React, { useState } from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
 import { Dashboard, Register } from "./pages";
 
 function App() {
   const [showSidebar, setShowSidebar] = useState(false);
+  const [pathname, setPathName] = useState(window.location.pathname);
   return (
     <div className="App">
       <div className="topbar shadow-2">
@@ -23,20 +24,51 @@ function App() {
           onClick={() => setShowSidebar(true)}
         />
       </div>
-      <Sidebar visible={showSidebar} onHide={() => setShowSidebar(false)}>
-        <h3>Left Sidebar</h3>
-      </Sidebar>
       <BrowserRouter>
+        <Sidebar visible={showSidebar} onHide={() => setShowSidebar(false)}>
+          <div style={{ marginTop: 30 }}>
+            <Link to="/dashboard" style={{ textDecoration: "none" }}>
+              <Button
+                className={`${
+                  pathname.includes("dashboard") ? " p-button-secondary" : ""
+                }`}
+                onClick={() => setPathName("/dashboard")}
+                icon="pi pi-chart-bar"
+                iconPos="left"
+                label="Dashboard"
+                style={{ width: "90%", margin: 10 }}
+              ></Button>
+            </Link>
+            <Link to="/register" style={{ textDecoration: "none" }}>
+              <Button
+                className={`${
+                  pathname.includes("register") ? "p-button-secondary" : ""
+                }`}
+                onClick={() => setPathName("/register")}
+                icon="pi pi-chart-bar"
+                iconPos="left"
+                label="Register"
+                style={{ width: "90%", margin: 10 }}
+              ></Button>
+            </Link>
+            <Link to="/leave" style={{ textDecoration: "none" }}>
+              <Button
+                className={`${
+                  pathname.includes("leave") ? "p-button-secondary" : ""
+                }`}
+                onClick={() => setPathName("/leave")}
+                icon="pi pi-chart-bar"
+                iconPos="left"
+                label="Leave"
+                style={{ width: "90%", margin: 10 }}
+              ></Button>
+            </Link>
+          </div>
+        </Sidebar>
+
         <Routes>
-          <Route
-            exact
-            path="/"
-            element={<Dashboard/>}
-          />
-          <Route
-            path="/Register"
-            element={<Register/>}
-          />
+          <Route exact path="/dashboard" element={<Dashboard />} />
+          <Route path="/register" element={<Register />} />
         </Routes>
       </BrowserRouter>
     </div>

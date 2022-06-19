@@ -15,13 +15,17 @@ body {
 
 .fc .fc-daygrid-day-frame {
   position: relative;
-  min-height: 100px !important;
+  /* min-height: 100px !important; */
+  height: 100% !important;
 }
 
 .fc .fc-daygrid-day.fc-day-today{
-  background-color: var(--blue-100);
+  background-color: var(--blue-100) !important;
 }
 
+/* .fc .fc-bg-event{
+  background-color: var(--red-500) !important;
+} */
 
 
 .datatable-crud-demo .table-header {
@@ -34,7 +38,7 @@ body {
       align-items: flex-start;
   }
 }
-.datatable-crud-demo .product-image {
+/* .datatable-crud-demo .product-image {
   width: 100px;
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
 }
@@ -42,12 +46,13 @@ body {
   width: 150px;
   margin: 0 auto 2rem auto;
   display: block;
-}
+} */
 .datatable-crud-demo .confirmation-content {
   display: flex;
   align-items: center;
   justify-content: center;
 }
+
 @media screen and (max-width: 960px) {
   .datatable-crud-demo .p-toolbar {
       flex-wrap: wrap;
@@ -61,5 +66,21 @@ body {
   .datatable-crud-demo .table-header .p-input-icon-left, .datatable-crud-demo .table-header input {
       width: 100%;
   }
+}
+
+.fc .fc-toolbar-title{
+  font-size: 1em!important;
+}
+
+.fc.fc-theme-standard .fc-toolbar .fc-button{
+  font-size: 0.8em!important;
+}
+
+.fc.fc-theme-standard .fc-toolbar .fc-button .fc-icon-chevron-left{
+  font-size: 0.9em!important;
+}
+
+.fc.fc-theme-standard .fc-toolbar .fc-button .fc-icon-chevron-right{
+  font-size: 0.9em!important;
 }
                         
