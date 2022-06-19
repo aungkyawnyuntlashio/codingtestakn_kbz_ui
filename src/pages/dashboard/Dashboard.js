@@ -1,13 +1,30 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 import { Calendar } from "primereact/calendar";
 import { addLocale, locale } from "primereact/api";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
+import { setLoading } from "../../store/loading/loadingActions";
+import { connect } from "react-redux";
+import { employeeService } from "../../services";
 
-function Dashboard() {
+function Dashboard(props) {
+  const { isLoading } = props;
   const [date, setDate] = useState(new Date());
+
+  useEffect(() => {
+    employeeService
+      .getAllEmployeeService()
+      .then((data) => {
+        console.log("emp>>", data);
+      })
+      .catch((err) => console.log("err>>", err));
+    return () => {
+      setDate(new Date());
+    };
+  }, []);
+
   const handleDateClick = (arg) => {
     alert(arg.dateStr);
   };
@@ -65,4 +82,18 @@ function Dashboard() {
   );
 }
 
-export default Dashboard;
+function mapStateToProps(state) {
+  return {
+    isLoading: state.loadingReducer.isLoading,
+  };
+}
+
+function mapDispatchToProps(dispatch) {
+  return {
+    setLoading: (isLoading) => {
+      return dispatch(setLoading(isLoading));
+    },
+  };
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(Dashboard);

@@ -2,193 +2,174 @@ import React, { useState, useEffect, useRef } from "react";
 import { classNames } from "primereact/utils";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
-import { RegisterService } from "./Register.service";
 import { Toast } from "primereact/toast";
 import { Button } from "primereact/button";
-import { FileUpload } from "primereact/fileupload";
-import { Rating } from "primereact/rating";
 import { Toolbar } from "primereact/toolbar";
 import { InputTextarea } from "primereact/inputtextarea";
-import { RadioButton } from "primereact/radiobutton";
 import { InputNumber } from "primereact/inputnumber";
 import { Dialog } from "primereact/dialog";
 import { InputText } from "primereact/inputtext";
+import { employeeService } from "../../services";
+import moment from "moment";
+import { Calendar } from "primereact/calendar";
+import { addLocale, locale } from "primereact/api";
 
 function Register() {
-  let emptyProduct = {
-    id: null,
-    name: "",
-    image: null,
-    description: "",
-    category: null,
-    price: 0,
-    quantity: 0,
-    rating: 0,
-    inventoryStatus: "INSTOCK",
+  let emptyEmployee = {
+    address: "",
+    basicSalary: 0,
+    department: "",
+    designation: "",
+    employeeCode: "",
+    employeeName: "",
+    id: 0,
+    joinDate: new Date(),
+    mobile: "",
   };
 
-  const [products, setProducts] = useState(null);
-  const [productDialog, setProductDialog] = useState(false);
-  const [deleteProductDialog, setDeleteProductDialog] = useState(false);
-  const [deleteProductsDialog, setDeleteProductsDialog] = useState(false);
-  const [product, setProduct] = useState(emptyProduct);
-  const [selectedProducts, setSelectedProducts] = useState(null);
+  const [employees, setEmployees] = useState(null);
+  const [employeeDialog, setEmployeeDialog] = useState(false);
+  const [employee, setemployee] = useState(emptyEmployee);
+  const [selectedemployees, setSelectedemployees] = useState(null);
   const [submitted, setSubmitted] = useState(false);
   const [globalFilter, setGlobalFilter] = useState(null);
   const toast = useRef(null);
   const dt = useRef(null);
-  const productService = new RegisterService();
 
+  const getAllEmployee = () => {
+    employeeService
+      .getAllEmployeeService()
+      .then((data) => {
+        setEmployees(data.data);
+      })
+      .catch((err) => {
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: err.message,
+          life: 3000,
+        });
+      });
+  };
   useEffect(() => {
-    productService.getRegister().then((data) => {
-      setProducts(data);
-    });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    getAllEmployee();
+    return () => {
+      setEmployees(null);
+      setEmployeeDialog(false);
+      setemployee(emptyEmployee);
+      setSelectedemployees(null);
+      setSubmitted(false);
+      setGlobalFilter(null);
+    };
+  }, []);
+
+  addLocale("en", {
+    firstDayOfWeek: 1,
+  });
+  locale();
 
   const formatCurrency = (value) => {
-    return value.toLocaleString("en-US", {
-      style: "currency",
-      currency: "USD",
-    });
+    return value.toLocaleString("en-US");
   };
 
   const openNew = () => {
-    setProduct(emptyProduct);
+    setemployee(emptyEmployee);
     setSubmitted(false);
-    setProductDialog(true);
+    setEmployeeDialog(true);
   };
 
   const hideDialog = () => {
     setSubmitted(false);
-    setProductDialog(false);
+    setEmployeeDialog(false);
   };
 
-  const hideDeleteProductDialog = () => {
-    setDeleteProductDialog(false);
-  };
-
-  const hideDeleteProductsDialog = () => {
-    setDeleteProductsDialog(false);
-  };
-
-  const saveProduct = () => {
+  const saveEmployee = () => {
     setSubmitted(true);
 
-    if (product.name.trim()) {
-      let _products = [...products];
-      let _product = { ...product };
-      if (product.id) {
-        const index = findIndexById(product.id);
-
-        _products[index] = _product;
-        toast.current.show({
-          severity: "success",
-          summary: "Successful",
-          detail: "Product Updated",
-          life: 3000,
-        });
+    if (employee.employeeName.trim()) {
+      if (employee.id !== 0) {
+        employeeService
+          .updateEmployeeService(employee)
+          .then((data) => {
+            console.log("update>", data);
+            getAllEmployee();
+            toast.current.show({
+              severity: "success",
+              summary: "Successful",
+              detail: "Employee Updated",
+              life: 3000,
+            });
+          })
+          .catch((err) => {
+            toast.current.show({
+              severity: "error",
+              summary: "Error",
+              detail: err.message,
+              life: 3000,
+            });
+          });
       } else {
-        _product.id = createId();
-        _product.image = "product-placeholder.svg";
-        _products.push(_product);
-        toast.current.show({
-          severity: "success",
-          summary: "Successful",
-          detail: "Product Created",
-          life: 3000,
-        });
+        employeeService
+          .addNewEmployeeService(employee)
+          .then((data) => {
+            console.log("addemp>", data);
+            getAllEmployee();
+            toast.current.show({
+              severity: "success",
+              summary: "Successful",
+              detail: "Employee Created",
+              life: 3000,
+            });
+          })
+          .catch((err) => {
+            toast.current.show({
+              severity: "error",
+              summary: "Error",
+              detail: err.message,
+              life: 3000,
+            });
+          });
       }
 
-      setProducts(_products);
-      setProductDialog(false);
-      setProduct(emptyProduct);
+      setEmployeeDialog(false);
+      setemployee(emptyEmployee);
     }
   };
 
-  const editProduct = (product) => {
-    setProduct({ ...product });
-    setProductDialog(true);
+  const editemployee = (employee) => {
+    setemployee({ ...employee });
+    setEmployeeDialog(true);
   };
 
-  const confirmDeleteProduct = (product) => {
-    setProduct(product);
-    setDeleteProductDialog(true);
+  const dateFormat = (_date) => {
+    let date = new Date(_date);
+    return date;
   };
-
-  const deleteProduct = () => {
-    let _products = products.filter((val) => val.id !== product.id);
-    setProducts(_products);
-    setDeleteProductDialog(false);
-    setProduct(emptyProduct);
-    toast.current.show({
-      severity: "success",
-      summary: "Successful",
-      detail: "Product Deleted",
-      life: 3000,
-    });
-  };
-
-  const findIndexById = (id) => {
-    let index = -1;
-    for (let i = 0; i < products.length; i++) {
-      if (products[i].id === id) {
-        index = i;
-        break;
-      }
-    }
-
-    return index;
-  };
-
-  const createId = () => {
-    let id = "";
-    let chars =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    for (let i = 0; i < 5; i++) {
-      id += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return id;
-  };
-
 
   const exportCSV = () => {
     dt.current.exportCSV();
   };
 
-
-  const deleteSelectedProducts = () => {
-    let _products = products.filter((val) => !selectedProducts.includes(val));
-    setProducts(_products);
-    setDeleteProductsDialog(false);
-    setSelectedProducts(null);
-    toast.current.show({
-      severity: "success",
-      summary: "Successful",
-      detail: "Products Deleted",
-      life: 3000,
-    });
-  };
-
-  const onCategoryChange = (e) => {
-    let _product = { ...product };
-    _product["category"] = e.value;
-    setProduct(_product);
-  };
-
   const onInputChange = (e, name) => {
     const val = (e.target && e.target.value) || "";
-    let _product = { ...product };
-    _product[`${name}`] = val;
+    let _employee = { ...employee };
+    _employee[`${name}`] = val;
 
-    setProduct(_product);
+    setemployee(_employee);
   };
 
   const onInputNumberChange = (e, name) => {
     const val = e.value || 0;
-    let _product = { ...product };
-    _product[`${name}`] = val;
+    let _employee = { ...employee };
+    _employee[`${name}`] = val;
 
-    setProduct(_product);
+    setemployee(_employee);
+  };
+
+  const onDateChange = (e, name) => {
+    let _employee = { ...employee };
+    _employee[`${name}`] = e.value;
+    setemployee(_employee);
   };
 
   const leftToolbarTemplate = () => {
@@ -207,47 +188,46 @@ function Register() {
   const rightToolbarTemplate = () => {
     return (
       <React.Fragment>
-        
-        <Button
+        {/* <Button
           label="Export"
           icon="pi pi-upload"
           className="p-button-help"
           onClick={exportCSV}
+        /> */}
+        <Button
+          label="CSV"
+          type="button"
+          icon="pi pi-file"
+          onClick={exportCSV}
+          className="mr-2"
+          data-pr-tooltip="CSV"
+        />
+        <Button
+          label="Excel"
+          type="button"
+          icon="pi pi-file-excel"
+          // onClick={exportExcel}
+          className="p-button-success mr-2"
+          data-pr-tooltip="XLS"
+        />
+        <Button
+          label="PDF"
+          type="button"
+          icon="pi pi-file-pdf"
+          // onClick={exportPdf}
+          className="p-button-warning mr-2"
+          data-pr-tooltip="PDF"
         />
       </React.Fragment>
     );
   };
 
-  const imageBodyTemplate = (rowData) => {
-    return (
-      <img
-        src={`images/product/${rowData.image}`}
-        onError={(e) =>
-          (e.target.src =
-            "https://www.primefaces.org/wp-content/uploads/2020/05/placeholder.png")
-        }
-        alt={rowData.image}
-        className="product-image"
-      />
-    );
-  };
-
   const priceBodyTemplate = (rowData) => {
-    return formatCurrency(rowData.price);
+    return formatCurrency(rowData.basicSalary);
   };
 
-  const ratingBodyTemplate = (rowData) => {
-    return <Rating value={rowData.rating} readOnly cancel={false} />;
-  };
-
-  const statusBodyTemplate = (rowData) => {
-    return (
-      <span
-        className={`product-badge status-${rowData.inventoryStatus.toLowerCase()}`}
-      >
-        {rowData.inventoryStatus}
-      </span>
-    );
+  const dateBodyTemplate = (rowData) => {
+    return moment(rowData.joinDate).format("DD-MM-YYYY");
   };
 
   const actionBodyTemplate = (rowData) => {
@@ -256,12 +236,7 @@ function Register() {
         <Button
           icon="pi pi-pencil"
           className="p-button-rounded p-button-success mr-2"
-          onClick={() => editProduct(rowData)}
-        />
-        <Button
-          icon="pi pi-trash"
-          className="p-button-rounded p-button-warning"
-          onClick={() => confirmDeleteProduct(rowData)}
+          onClick={() => editemployee(rowData)}
         />
       </React.Fragment>
     );
@@ -269,7 +244,7 @@ function Register() {
 
   const header = (
     <div className="table-header">
-      <h5 className="mx-0 my-1">Manage Products</h5>
+      <h5 className="mx-0 my-1">Manage Employee</h5>
       <span className="p-input-icon-left">
         <i className="pi pi-search" />
         <InputText
@@ -280,7 +255,7 @@ function Register() {
       </span>
     </div>
   );
-  const productDialogFooter = (
+  const employeeDialogFooter = (
     <React.Fragment>
       <Button
         label="Cancel"
@@ -292,39 +267,7 @@ function Register() {
         label="Save"
         icon="pi pi-check"
         className="p-button-text"
-        onClick={saveProduct}
-      />
-    </React.Fragment>
-  );
-  const deleteProductDialogFooter = (
-    <React.Fragment>
-      <Button
-        label="No"
-        icon="pi pi-times"
-        className="p-button-text"
-        onClick={hideDeleteProductDialog}
-      />
-      <Button
-        label="Yes"
-        icon="pi pi-check"
-        className="p-button-text"
-        onClick={deleteProduct}
-      />
-    </React.Fragment>
-  );
-  const deleteProductsDialogFooter = (
-    <React.Fragment>
-      <Button
-        label="No"
-        icon="pi pi-times"
-        className="p-button-text"
-        onClick={hideDeleteProductsDialog}
-      />
-      <Button
-        label="Yes"
-        icon="pi pi-check"
-        className="p-button-text"
-        onClick={deleteSelectedProducts}
+        onClick={saveEmployee}
       />
     </React.Fragment>
   );
@@ -335,74 +278,75 @@ function Register() {
 
       <div className="card">
         <Toolbar
-          className="mb-4"
+          className="mb-1"
           left={leftToolbarTemplate}
           right={rightToolbarTemplate}
         ></Toolbar>
 
         <DataTable
           ref={dt}
-          value={products}
-          selection={selectedProducts}
-          onSelectionChange={(e) => setSelectedProducts(e.value)}
+          value={employees}
+          selection={selectedemployees}
+          onSelectionChange={(e) => setSelectedemployees(e.value)}
           dataKey="id"
           paginator
           rows={10}
           rowsPerPageOptions={[5, 10, 25]}
           paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-          currentPageReportTemplate="Showing {first} to {last} of {totalRecords} products"
+          currentPageReportTemplate="Showing {first} to {last} of {totalRecords} Employees"
           globalFilter={globalFilter}
           header={header}
           responsiveLayout="scroll"
         >
           <Column
-            selectionMode="multiple"
-            headerStyle={{ width: "3rem" }}
-            exportable={false}
-          ></Column>
-          <Column
-            field="code"
+            field="employeeCode"
             header="Code"
-            sortable
-            style={{ minWidth: "12rem" }}
-          ></Column>
-          <Column
-            field="name"
-            header="Name"
-            sortable
-            style={{ minWidth: "16rem" }}
-          ></Column>
-          <Column
-            field="image"
-            header="Image"
-            body={imageBodyTemplate}
-          ></Column>
-          <Column
-            field="price"
-            header="Price"
-            body={priceBodyTemplate}
             sortable
             style={{ minWidth: "8rem" }}
           ></Column>
           <Column
-            field="category"
-            header="Category"
+            field="employeeName"
+            header="Name"
+            sortable
+            style={{ minWidth: "12rem" }}
+          ></Column>
+          <Column
+            field="mobile"
+            header="Mobile"
+            sortable
+            style={{ minWidth: "12rem" }}
+          ></Column>
+          <Column
+            field="department"
+            header="Department"
+            sortable
+            style={{ minWidth: "8rem" }}
+          ></Column>
+          <Column
+            field="designation"
+            header="Designation"
+            sortable
+            style={{ minWidth: "8rem" }}
+          ></Column>
+          <Column
+            field="basicSalary"
+            header="Basic Salary"
+            body={priceBodyTemplate}
+            sortable
+            style={{ minWidth: "8rem", textAlign: "right" }}
+          ></Column>
+          <Column
+            field="joinDate"
+            header="Join Date"
+            body={dateBodyTemplate}
             sortable
             style={{ minWidth: "10rem" }}
           ></Column>
           <Column
-            field="rating"
-            header="Reviews"
-            body={ratingBodyTemplate}
+            field="address"
+            header="Address"
             sortable
-            style={{ minWidth: "12rem" }}
-          ></Column>
-          <Column
-            field="inventoryStatus"
-            header="Status"
-            body={statusBodyTemplate}
-            sortable
-            style={{ minWidth: "12rem" }}
+            style={{ minWidth: "16rem" }}
           ></Column>
           <Column
             body={actionBodyTemplate}
@@ -413,157 +357,132 @@ function Register() {
       </div>
 
       <Dialog
-        visible={productDialog}
+        visible={employeeDialog}
         style={{ width: "450px" }}
-        header="Product Details"
+        header={
+          employee.id === null ? "Add New Employee" : "Edit Employee Details"
+        }
         modal
         className="p-fluid"
-        footer={productDialogFooter}
+        footer={employeeDialogFooter}
         onHide={hideDialog}
       >
-        {product.image && (
-          <img
-            src={`images/product/${product.image}`}
-            onError={(e) =>
-              (e.target.src =
-                "https://www.primefaces.org/wp-content/uploads/2020/05/placeholder.png")
-            }
-            alt={product.image}
-            className="product-image block m-auto pb-3"
-          />
-        )}
         <div className="field">
-          <label htmlFor="name">Name</label>
+          <label htmlFor="employeeCode">Employee Code</label>
           <InputText
-            id="name"
-            value={product.name}
-            onChange={(e) => onInputChange(e, "name")}
+            id="employeeCode"
+            value={employee.employeeCode}
+            onChange={(e) => onInputChange(e, "employeeCode")}
             required
-            autoFocus
-            className={classNames({ "p-invalid": submitted && !product.name })}
+            className={classNames({
+              "p-invalid": submitted && !employee.employeeCode,
+            })}
           />
-          {submitted && !product.name && (
+          {submitted && !employee.employeeCode && (
+            <small className="p-error">Employee Code is required.</small>
+          )}
+        </div>
+        <div className="field">
+          <label htmlFor="employeeName">Name</label>
+          <InputText
+            id="employeeName"
+            value={employee.employeeName}
+            onChange={(e) => onInputChange(e, "employeeName")}
+            required
+            className={classNames({
+              "p-invalid": submitted && !employee.employeeName,
+            })}
+          />
+          {submitted && !employee.employeeName && (
             <small className="p-error">Name is required.</small>
           )}
         </div>
         <div className="field">
-          <label htmlFor="description">Description</label>
-          <InputTextarea
-            id="description"
-            value={product.description}
-            onChange={(e) => onInputChange(e, "description")}
+          <label htmlFor="mobile">Mobile Number</label>
+          <InputText
+            id="mobile"
+            value={employee.mobile}
+            onChange={(e) => onInputChange(e, "mobile")}
             required
-            rows={3}
-            cols={20}
+            className={classNames({
+              "p-invalid": submitted && !employee.mobile,
+            })}
           />
+          {submitted && !employee.mobile && (
+            <small className="p-error">Mobile is required.</small>
+          )}
         </div>
-
-        <div className="field">
-          <label className="mb-3">Category</label>
-          <div className="formgrid grid">
-            <div className="field-radiobutton col-6">
-              <RadioButton
-                inputId="category1"
-                name="category"
-                value="Accessories"
-                onChange={onCategoryChange}
-                checked={product.category === "Accessories"}
-              />
-              <label htmlFor="category1">Accessories</label>
-            </div>
-            <div className="field-radiobutton col-6">
-              <RadioButton
-                inputId="category2"
-                name="category"
-                value="Clothing"
-                onChange={onCategoryChange}
-                checked={product.category === "Clothing"}
-              />
-              <label htmlFor="category2">Clothing</label>
-            </div>
-            <div className="field-radiobutton col-6">
-              <RadioButton
-                inputId="category3"
-                name="category"
-                value="Electronics"
-                onChange={onCategoryChange}
-                checked={product.category === "Electronics"}
-              />
-              <label htmlFor="category3">Electronics</label>
-            </div>
-            <div className="field-radiobutton col-6">
-              <RadioButton
-                inputId="category4"
-                name="category"
-                value="Fitness"
-                onChange={onCategoryChange}
-                checked={product.category === "Fitness"}
-              />
-              <label htmlFor="category4">Fitness</label>
-            </div>
+        <div className="formgrid grid">
+          <div className="field col">
+            <label htmlFor="department">Department</label>
+            <InputText
+              id="department"
+              value={employee.department}
+              onChange={(e) => onInputChange(e, "department")}
+              required
+              className={classNames({
+                "p-invalid": submitted && !employee.department,
+              })}
+            />
+            {submitted && !employee.department && (
+              <small className="p-error">Department is required.</small>
+            )}
+          </div>
+          <div className="field col">
+            <label htmlFor="designation">Designation</label>
+            <InputText
+              id="designation"
+              value={employee.designation}
+              onChange={(e) => onInputChange(e, "designation")}
+              required
+              className={classNames({
+                "p-invalid": submitted && !employee.designation,
+              })}
+            />
+            {submitted && !employee.designation && (
+              <small className="p-error">Designation is required.</small>
+            )}
           </div>
         </div>
 
         <div className="formgrid grid">
           <div className="field col">
-            <label htmlFor="price">Price</label>
+            <label htmlFor="basicSalary">Basic Salary</label>
             <InputNumber
-              id="price"
-              value={product.price}
-              onValueChange={(e) => onInputNumberChange(e, "price")}
+              id="basicSalary"
+              value={employee.basicSalary}
+              onValueChange={(e) => onInputNumberChange(e, "basicSalary")}
               mode="currency"
-              currency="USD"
-              locale="en-US"
+              currency="MMK"
             />
           </div>
           <div className="field col">
-            <label htmlFor="quantity">Quantity</label>
-            <InputNumber
-              id="quantity"
-              value={product.quantity}
-              onValueChange={(e) => onInputNumberChange(e, "quantity")}
-              integeronly
+            <label htmlFor="joinDate">Join Date</label>
+            <Calendar
+              id="joinDate"
+              value={dateFormat(employee.joinDate)}
+              onChange={(e) => onDateChange(e, "joinDate")}
+              disabledDays={[0, 6]}
+              dateFormat="dd-mm-yy"
+              showIcon
             />
           </div>
         </div>
-      </Dialog>
-
-      <Dialog
-        visible={deleteProductDialog}
-        style={{ width: "450px" }}
-        header="Confirm"
-        modal
-        footer={deleteProductDialogFooter}
-        onHide={hideDeleteProductDialog}
-      >
-        <div className="confirmation-content">
-          <i
-            className="pi pi-exclamation-triangle mr-3"
-            style={{ fontSize: "2rem" }}
+        <div className="field">
+          <label htmlFor="address">Address</label>
+          <InputTextarea
+            id="address"
+            value={employee.address}
+            onChange={(e) => onInputChange(e, "address")}
+            required
+            rows={3}
+            cols={20}
+            className={classNames({
+              "p-invalid": submitted && !employee.address,
+            })}
           />
-          {product && (
-            <span>
-              Are you sure you want to delete <b>{product.name}</b>?
-            </span>
-          )}
-        </div>
-      </Dialog>
-
-      <Dialog
-        visible={deleteProductsDialog}
-        style={{ width: "450px" }}
-        header="Confirm"
-        modal
-        footer={deleteProductsDialogFooter}
-        onHide={hideDeleteProductsDialog}
-      >
-        <div className="confirmation-content">
-          <i
-            className="pi pi-exclamation-triangle mr-3"
-            style={{ fontSize: "2rem" }}
-          />
-          {product && (
-            <span>Are you sure you want to delete the selected products?</span>
+          {submitted && !employee.address && (
+            <small className="p-error">Address is required.</small>
           )}
         </div>
       </Dialog>
