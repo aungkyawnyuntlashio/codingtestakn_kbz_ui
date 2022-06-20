@@ -9,7 +9,7 @@ import "./App.css";
 
 import { Sidebar } from "primereact/sidebar";
 import React, { useState } from "react";
-import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Link, Route, Routes, Navigate } from "react-router-dom";
 import { Dashboard, Register } from "./pages";
 
 function App() {
@@ -67,7 +67,8 @@ function App() {
         </Sidebar>
 
         <Routes>
-          <Route exact path="/dashboard" element={<Dashboard />} />
+          <Route path="/" element={<Navigate replace to="/dashboard"/>}/>
+          <Route exact path="/dashboard" element={<Dashboard />}/>
           <Route path="/register" element={<Register />} />
         </Routes>
       </BrowserRouter>

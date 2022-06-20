@@ -20,6 +20,8 @@ function Dashboard(props) {
   const [holidayDate, setHolidayDate] = useState(new Date());
   const [holidayTitle, setHolidayTitle] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [dialogHeader, setDialogHeader] = useState("Add Holiday");
+  const [holidayId, setHolidayId] = useState(0);
   const toast = useRef(null);
 
   useEffect(() => {
@@ -59,10 +61,20 @@ function Dashboard(props) {
     setAllEvent(newArray);
   };
 
-  const handleDateClick = (arg) => {
-    console.log('arg>',arg)
+  const handleDateClick = async (arg) => {
+    const result = await holidayService.findHolidayByDateService({
+      holidayDate: arg.dateStr,
+    });
     setHolidayDate(arg.dateStr);
     setShowDialog(true);
+    if (result.data == null) {
+      setDialogHeader("Add New Holiday");
+    } else {
+      setDialogHeader("Edit/Delete Holiday");
+      setHolidayId(result.data.id)
+      setHolidayTitle(result.data.holidayTitle);
+    }
+    console.log("arg>", result);
   };
 
   const renderEventContent = (eventInfo) => {
@@ -91,6 +103,33 @@ function Dashboard(props) {
     );
   };
 
+  const onUpdateClick=()=>{
+    setSubmitted(true);
+    if (holidayTitle.trim()) {
+      holidayService
+        .updateHolidayService({id:holidayId, holidayTitle, holidayDate })
+        .then((data) => {
+          if (data.error) {
+            toast.current.show({
+              severity: "warn",
+              summary: "Error",
+              detail: data.message,
+              life: 5000,
+            });
+          } else {
+            loadInitData();
+            toast.current.show({
+              severity: "success",
+              summary: "Successful",
+              detail: "Holiday Updated",
+              life: 5000,
+            });
+            onModelClose();
+          }
+        });
+    }
+  }
+
   const onSaveClick = () => {
     setSubmitted(true);
     if (holidayTitle.trim()) {
@@ -102,38 +141,59 @@ function Dashboard(props) {
               severity: "warn",
               summary: "Error",
               detail: data.message,
-              life: 3000,
+              life: 5000,
             });
           } else {
             loadInitData();
             toast.current.show({
               severity: "success",
               summary: "Successful",
-              detail: "Employee Updated",
-              life: 3000,
+              detail: "Holiday Created",
+              life: 5000,
             });
-            setShowDialog(false);
+            onModelClose();
           }
         });
     }
   };
 
+  const onDeleteClick=()=>{
+    holidayService
+        .deleteHolidayService(holidayId)
+        .then((data) => {
+          if (data.error) {
+            toast.current.show({
+              severity: "warn",
+              summary: "Error",
+              detail: data.message,
+              life: 5000,
+            });
+          } else {
+            loadInitData();
+            toast.current.show({
+              severity: "success",
+              summary: "Successful",
+              detail: "Holiday Deleted",
+              life: 5000,
+            });
+            onModelClose();
+          }
+        });
+  }
+
   const renderDialogFooter = () => {
     return (
       <div>
         <Button
-          label="CANCEL"
-          icon="pi pi-times"
-          onClick={() => {
-            setShowDialog(false);
-            setSubmitted(false);
-          }}
+          label={holidayId===0?"CANCEL":"DELETE"}
+          icon={holidayId===0?"pi pi-times":"pi pi-trash"}
+          onClick={holidayId===0?onModelClose:onDeleteClick}
           className="p-button-text"
         />
         <Button
-          label="SAVE"
+          label={holidayId===0?"SAVE":"UPDATE"}
           icon="pi pi-save"
-          onClick={onSaveClick}
+          onClick={holidayId===0?onSaveClick:onUpdateClick}
           className="p-button-text"
           autoFocus
         />
@@ -141,19 +201,25 @@ function Dashboard(props) {
     );
   };
 
+  const onModelClose=()=>{
+    setShowDialog(false);
+    setSubmitted(false);
+    setHolidayTitle('');
+    setHolidayId(0);
+  }
+
   return (
     <div>
       <div>
         <Toast ref={toast} />
         <Dialog
-          header={`Add Holiday(${moment(holidayDate).format("DD-MM-YYYY")})`}
+          header={`${dialogHeader}(${moment(holidayDate).format(
+            "DD-MM-YYYY"
+          )})`}
           visible={showDialog}
           style={{ width: "40vw" }}
           footer={renderDialogFooter}
-          onHide={() => {
-            setShowDialog(false);
-            setSubmitted(false);
-          }}
+          onHide={onModelClose}
           modal
           className="p-fluid"
         >
@@ -173,8 +239,8 @@ function Dashboard(props) {
             )}
           </div>
         </Dialog>
-        <div>
-          <h3>Click To Add Holiday</h3>
+        <div className="ml-3">
+          <h2>Click To CRUD Holiday</h2>
         </div>
         <FullCalendar
           dayCellContent={renderDayContent}
