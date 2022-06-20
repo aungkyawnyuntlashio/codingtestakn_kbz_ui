@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -7,10 +7,20 @@ import { setLoading } from "../../store/loading/loadingActions";
 import { connect } from "react-redux";
 import { leaveService, holidayService } from "../../services";
 import moment from "moment";
+import { Dialog } from "primereact/dialog";
+import { Button } from "primereact/button";
+import { InputText } from "primereact/inputtext";
+import { classNames } from "primereact/utils";
+import { Toast } from "primereact/toast";
 
 function Dashboard(props) {
   const { isLoading } = props;
   const [allEvent, setAllEvent] = useState([]);
+  const [showDialog, setShowDialog] = useState(false);
+  const [holidayDate, setHolidayDate] = useState(new Date());
+  const [holidayTitle, setHolidayTitle] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const toast = useRef(null);
 
   useEffect(() => {
     loadInitData();
@@ -43,18 +53,19 @@ function Dashboard(props) {
       let obj = {};
       obj["title"] = `${value.employeeName}(${value.leaveCode})`;
       obj["start"] = moment(value.startDate).format("YYYY-MM-DD");
-      obj["end"] = moment(value.endDate).format("YYYY-MM-DD");
+      obj["end"] = moment(value.endDate).add(1, "days").format("YYYY-MM-DD");
       newArray.push(obj);
     });
     setAllEvent(newArray);
   };
 
   const handleDateClick = (arg) => {
-    alert(arg.dateStr);
+    console.log('arg>',arg)
+    setHolidayDate(arg.dateStr);
+    setShowDialog(true);
   };
 
   const renderEventContent = (eventInfo) => {
-    // console.log('event>',eventInfo)
     return (
       <div>
         <b>{eventInfo.timeText}</b>
@@ -71,7 +82,6 @@ function Dashboard(props) {
   };
 
   const renderDayContent = (content) => {
-    // console.log('arg',content)
     return (
       <div>
         <b style={{ color: content.isToday ? "white" : null }}>
@@ -81,54 +91,99 @@ function Dashboard(props) {
     );
   };
 
+  const onSaveClick = () => {
+    setSubmitted(true);
+    if (holidayTitle.trim()) {
+      holidayService
+        .addNewHolidayService({ holidayTitle, holidayDate })
+        .then((data) => {
+          if (data.error) {
+            toast.current.show({
+              severity: "warn",
+              summary: "Error",
+              detail: data.message,
+              life: 3000,
+            });
+          } else {
+            loadInitData();
+            toast.current.show({
+              severity: "success",
+              summary: "Successful",
+              detail: "Employee Updated",
+              life: 3000,
+            });
+            setShowDialog(false);
+          }
+        });
+    }
+  };
+
+  const renderDialogFooter = () => {
+    return (
+      <div>
+        <Button
+          label="CANCEL"
+          icon="pi pi-times"
+          onClick={() => {
+            setShowDialog(false);
+            setSubmitted(false);
+          }}
+          className="p-button-text"
+        />
+        <Button
+          label="SAVE"
+          icon="pi pi-save"
+          onClick={onSaveClick}
+          className="p-button-text"
+          autoFocus
+        />
+      </div>
+    );
+  };
+
   return (
     <div>
       <div>
+        <Toast ref={toast} />
+        <Dialog
+          header={`Add Holiday(${moment(holidayDate).format("DD-MM-YYYY")})`}
+          visible={showDialog}
+          style={{ width: "40vw" }}
+          footer={renderDialogFooter}
+          onHide={() => {
+            setShowDialog(false);
+            setSubmitted(false);
+          }}
+          modal
+          className="p-fluid"
+        >
+          <div className="field">
+            <label htmlFor="holidayTitle">Holiday Title</label>
+            <InputText
+              id="holidayTitle"
+              value={holidayTitle}
+              onChange={(e) => setHolidayTitle(e.target.value)}
+              required
+              className={classNames({
+                "p-invalid": submitted && !holidayTitle,
+              })}
+            />
+            {submitted && !holidayTitle && (
+              <small className="p-error">Holiday Title is required.</small>
+            )}
+          </div>
+        </Dialog>
+        <div>
+          <h3>Click To Add Holiday</h3>
+        </div>
         <FullCalendar
           dayCellContent={renderDayContent}
-          // dayCellDidMount={renderDayContent}
+          headerToolbar={{ start: "title", end: "prev,next" }}
           locale={"en"}
           firstDay={1}
           plugins={[dayGridPlugin, interactionPlugin]}
           initialView="dayGridMonth"
           events={allEvent}
-          // events={[
-          //   {
-          //     title: "All Day Event",
-          //     start: "2022-06-01",
-          //     end: "2022-06-01",
-          //     display: "background",
-          //     backgroundColor: "red",
-          //     textColor: "red",
-          //   },
-          //   { title: "Long Event", start: "2022-06-07", end: "2022-06-10" },
-          //   {
-          //     groupId: "999",
-          //     title: "Repeating Event",
-          //     start: "2022-06-09T16:00:00+00:00",
-          //   },
-          //   {
-          //     groupId: "999",
-          //     title: "Repeating Event",
-          //     start: "2022-06-16T16:00:00+00:00",
-          //   },
-          //   { title: "Conference", start: "2022-06-17", end: "2022-06-19" },
-          //   {
-          //     title: "Meeting",
-          //     start: "2022-06-18T10:30:00+00:00",
-          //     end: "2022-06-18T12:30:00+00:00",
-          //   },
-          //   { title: "Lunch", start: "2022-06-18T12:00:00+00:00" },
-          //   { title: "Birthday Party", start: "2022-06-19T07:00:00+00:00" },
-          //   {
-          //     url: "http://google.com/",
-          //     title: "Click for Google",
-          //     start: "2022-06-28",
-          //   },
-          //   { title: "Meeting", start: "2022-06-18T14:30:00+00:00" },
-          //   { title: "Happy Hour", start: "2022-06-18T17:30:00+00:00" },
-          //   { title: "Dinner", start: "2022-06-18T20:00:00+00:00" },
-          // ]}
           eventContent={renderEventContent}
           dateClick={handleDateClick}
         />
