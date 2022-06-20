@@ -10,7 +10,7 @@ import "./App.css";
 import { Sidebar } from "primereact/sidebar";
 import React, { useState } from "react";
 import { BrowserRouter, Link, Route, Routes, Navigate } from "react-router-dom";
-import { Dashboard, Register } from "./pages";
+import { Dashboard, Leave, Register } from "./pages";
 
 function App() {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -32,7 +32,10 @@ function App() {
                 className={`${
                   pathname.includes("dashboard") ? " p-button-secondary" : ""
                 }`}
-                onClick={() => setPathName("/dashboard")}
+                onClick={() => {
+                  setPathName("/dashboard");
+                  setShowSidebar(false);
+                }}
                 icon="pi pi-chart-bar"
                 iconPos="left"
                 label="Dashboard"
@@ -44,7 +47,10 @@ function App() {
                 className={`${
                   pathname.includes("register") ? "p-button-secondary" : ""
                 }`}
-                onClick={() => setPathName("/register")}
+                onClick={() => {
+                  setPathName("/register");
+                  setShowSidebar(false);
+                }}
                 icon="pi pi-chart-bar"
                 iconPos="left"
                 label="Register"
@@ -56,7 +62,10 @@ function App() {
                 className={`${
                   pathname.includes("leave") ? "p-button-secondary" : ""
                 }`}
-                onClick={() => setPathName("/leave")}
+                onClick={() => {
+                  setPathName("/leave");
+                  setShowSidebar(false);
+                }}
                 icon="pi pi-chart-bar"
                 iconPos="left"
                 label="Leave"
@@ -67,9 +76,10 @@ function App() {
         </Sidebar>
 
         <Routes>
-          <Route path="/" element={<Navigate replace to="/dashboard"/>}/>
-          <Route exact path="/dashboard" element={<Dashboard />}/>
+          <Route path="/" element={<Navigate replace to="/dashboard" />} />
+          <Route exact path="/dashboard" element={<Dashboard />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/leave" element={<Leave />} />
         </Routes>
       </BrowserRouter>
     </div>

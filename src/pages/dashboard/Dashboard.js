@@ -74,7 +74,6 @@ function Dashboard(props) {
       setHolidayId(result.data.id)
       setHolidayTitle(result.data.holidayTitle);
     }
-    console.log("arg>", result);
   };
 
   const renderEventContent = (eventInfo) => {
@@ -240,7 +239,7 @@ function Dashboard(props) {
           </div>
         </Dialog>
         <div className="ml-3">
-          <h2>Click To CRUD Holiday</h2>
+          <h2>Click To Add,Edit and Delete Holiday</h2>
         </div>
         <FullCalendar
           dayCellContent={renderDayContent}

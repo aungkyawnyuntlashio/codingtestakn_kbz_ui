@@ -24,7 +24,7 @@ function EmployeeModel({
         visible={employeeDialog}
         style={{ width: "450px" }}
         header={
-          employee.id === null ? "Add New Employee" : "Edit Employee Details"
+          employee.id === 0 ? "Add New Employee" : "Edit Employee Details"
         }
         modal
         className="p-fluid"
